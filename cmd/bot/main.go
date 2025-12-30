@@ -6,6 +6,8 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/joho/godotenv"
+	"github.com/template-dev/Go_TelegramBot/internal/app/commands"
+	"github.com/template-dev/Go_TelegramBot/internal/service/product"
 )
 
 func main() {
@@ -28,27 +30,19 @@ func main() {
 
 	updates := bot.GetUpdatesChan(u)
 
+	productService := product.NewService()
+
+	commander := commands.NewCommander(bot, productService)
+
 	for update := range updates {
 
 		switch update.Message.Command() {
 		case "help":
-			helpCmd(bot, update.Message)
+			commander.HelpCmd(update.Message)
+		case "list":
+			commander.ListCmd(update.Message)
 		default:
-			defaultBehaviour(bot, update.Message)
+			commander.DefaultBehaviour(update.Message)
 		}
 	}
-}
-
-func helpCmd(bot *tgbotapi.BotAPI, inputMsg *tgbotapi.Message) {
-	msg := tgbotapi.NewMessage(inputMsg.Chat.ID, "/help - help")
-	bot.Send(msg)
-}
-
-func defaultBehaviour(bot *tgbotapi.BotAPI, inputMsg *tgbotapi.Message) {
-	log.Printf("[%s] %s", inputMsg.From.UserName, inputMsg.Text)
-
-	msg := tgbotapi.NewMessage(inputMsg.Chat.ID, inputMsg.Text)
-	msg.ReplyToMessageID = inputMsg.MessageID
-
-	bot.Send(msg)
 }
